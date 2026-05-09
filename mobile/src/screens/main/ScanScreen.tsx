@@ -88,56 +88,62 @@ export default function ScanScreen({ navigation }: any) {
   const resetScan = () => { setImageUri(null); setStage('idle'); };
 
   return (
-    <LinearGradient colors={['#0D1117', '#162032']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <Ionicons name="scan" size={24} color={COLORS.primary} />
-          </View>
-          <View>
-            <Text style={styles.headerTitle}>Crop Scanner</Text>
-            <Text style={styles.headerSub}>AI-Powered Disease Detection</Text>
-          </View>
-        </View>
-
-        {/* ── Idle state (Custom Camera View) ── */}
-        {stage === 'idle' && (
-          <View style={styles.cameraWrapper}>
-            {!permission ? (
-              <View style={styles.idleLoading}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-              </View>
-            ) : !permission.granted ? (
-              <View style={styles.permWrap}>
-                <Ionicons name="camera-outline" size={48} color={COLORS.primary} style={{ marginBottom: 16 }} />
-                <Text style={styles.permText}>Camera access is required to scan crops.</Text>
-                <TouchableOpacity style={styles.permBtn} onPress={requestPermission} activeOpacity={0.85}>
-                  <Text style={styles.permBtnText}>Grant Permission</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <CameraView style={styles.camera} facing="back" ref={cameraRef}>
-                <View style={styles.cameraBottomBar}>
-                  <TouchableOpacity style={styles.cameraGalleryBtn} onPress={pickFromGallery} activeOpacity={0.8}>
-                    <Ionicons name="images" size={24} color="#fff" />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity style={styles.shutterBtn} onPress={takePicture} activeOpacity={0.85}>
-                    <View style={styles.shutterInner} />
-                  </TouchableOpacity>
-
-                  <View style={{ width: 44 }} />
+    <View style={styles.container}>
+      {stage === 'idle' ? (
+        <View style={styles.container}>
+          {!permission ? (
+            <View style={styles.idleLoading}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : !permission.granted ? (
+            <View style={styles.permWrap}>
+              <Ionicons name="camera-outline" size={48} color={COLORS.primary} style={{ marginBottom: 16 }} />
+              <Text style={styles.permText}>Camera access is required to scan crops.</Text>
+              <TouchableOpacity style={styles.permBtn} onPress={requestPermission} activeOpacity={0.85}>
+                <Text style={styles.permBtnText}>Grant Permission</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <CameraView style={StyleSheet.absoluteFillObject} facing="back" ref={cameraRef}>
+              {/* Header Overlay */}
+              <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.headerOverlay}>
+                <View style={styles.headerIcon}>
+                  <Ionicons name="scan" size={24} color={COLORS.primary} />
                 </View>
-              </CameraView>
-            )}
-          </View>
-        )}
+                <View>
+                  <Text style={styles.headerTitle}>Crop Scanner</Text>
+                  <Text style={styles.headerSub}>AI-Powered Disease Detection</Text>
+                </View>
+              </LinearGradient>
 
-        {/* ── Preview state ── */}
-        {(stage === 'preview' || stage === 'scanning') && imageUri && (
-          <>
+              {/* Bottom Bar Overlay */}
+              <View style={styles.cameraBottomBarOverlay}>
+                <TouchableOpacity style={styles.cameraGalleryBtn} onPress={pickFromGallery} activeOpacity={0.8}>
+                  <Ionicons name="images" size={24} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.shutterBtn} onPress={takePicture} activeOpacity={0.85}>
+                  <View style={styles.shutterInner} />
+                </TouchableOpacity>
+                <View style={{ width: 44 }} />
+              </View>
+            </CameraView>
+          )}
+        </View>
+      ) : (
+        <LinearGradient colors={['#0D1117', '#162032']} style={styles.container}>
+          <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+            {/* ── Header ── */}
+            <View style={styles.header}>
+              <View style={styles.headerIcon}>
+                <Ionicons name="scan" size={24} color={COLORS.primary} />
+              </View>
+              <View>
+                <Text style={styles.headerTitle}>Crop Scanner</Text>
+                <Text style={styles.headerSub}>AI-Powered Disease Detection</Text>
+              </View>
+            </View>
+
+            {/* ── Preview state ── */}
             <View style={styles.previewWrap}>
               <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="cover" />
               {stage === 'scanning' && (
@@ -164,11 +170,10 @@ export default function ScanScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             )}
-          </>
-        )}
-
-      </ScrollView>
-    </LinearGradient>
+          </ScrollView>
+        </LinearGradient>
+      )}
+    </View>
   );
 }
 
@@ -185,35 +190,31 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: FONTS.sizes.xl, fontWeight: '800', color: COLORS.textPrimary },
   headerSub:   { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
 
-  idleLoading: { flex: 1, height: 400, justifyContent: 'center', alignItems: 'center', gap: SPACING.md },
+  idleLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D1117' },
   
-  cameraWrapper: {
-    height: 480,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden',
-    marginBottom: SPACING.lg,
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1, borderColor: COLORS.border,
+  headerOverlay: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.lg,
   },
-  camera: { flex: 1, justifyContent: 'flex-end' },
-  cameraBottomBar: {
+  cameraBottomBarOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.xl, paddingBottom: SPACING.xl, paddingTop: SPACING.lg,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: SPACING.xl, paddingBottom: 40, paddingTop: SPACING.xl,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   cameraGalleryBtn: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 48, height: 48, borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.25)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
   },
   shutterBtn: {
-    width: 68, height: 68, borderRadius: 34,
+    width: 76, height: 76, borderRadius: 38,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: '#fff',
+    borderWidth: 3, borderColor: '#fff',
   },
-  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },
+  shutterInner: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff' },
   
   permWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
   permText: { color: COLORS.textSecondary, fontSize: FONTS.sizes.md, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 22 },
