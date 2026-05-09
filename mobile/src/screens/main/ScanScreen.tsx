@@ -5,13 +5,14 @@
  * preview → send to FastAPI /predict/scan → push to
  * ResultScreen with the response.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Image, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
@@ -21,17 +22,11 @@ import { saveToHistory } from '../../services/historyStore';
 
 type Stage = 'idle' | 'preview' | 'scanning' | 'done';
 
-export default function ScanScreen({ navigation, route }: any) {
+export default function ScanScreen({ navigation }: any) {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [stage, setStage]       = useState<Stage>('idle');
-
-  useEffect(() => {
-    if (route.params?.autoLaunch) {
-      // Small timeout ensures the screen transition is smooth before launching camera
-      setTimeout(() => takePhoto(), 300);
-      navigation.setParams({ autoLaunch: false });
-    }
-  }, [route.params?.autoLaunch]);
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
   // ── Pick from gallery ────────────────────────────────
   const pickFromGallery = async () => {
@@ -43,7 +38,7 @@ export default function ScanScreen({ navigation, route }: any) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [1, 1] as [number, number],
+      aspect: [1, 1],
       quality: 0.85,
     });
     if (!result.canceled) {
@@ -53,23 +48,19 @@ export default function ScanScreen({ navigation, route }: any) {
     }
   };
 
-  // ── Take with camera ──────────────────────────────────
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Allow camera access in Settings to take photos.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1] as [number, number],
-      quality: 0.85,
-    });
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      setStage('preview');
-      Haptics.selectionAsync();
+  // ── Take with custom camera ───────────────────────────
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
+        if (photo?.uri) {
+          setImageUri(photo.uri);
+          setStage('preview');
+          Haptics.selectionAsync();
+        }
+      } catch (err) {
+        Alert.alert('Error', 'Could not capture photo');
+      }
     }
   };
 
@@ -111,49 +102,37 @@ export default function ScanScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* ── Idle state ── */}
+        {/* ── Idle state (Custom Camera View) ── */}
         {stage === 'idle' && (
-          <>
-            <View style={styles.uploadZone}>
-              <Ionicons name="leaf-outline" size={56} color={COLORS.primary} style={{ marginBottom: SPACING.md }} />
-              <Text style={styles.uploadTitle}>Photograph a Leaf</Text>
-              <Text style={styles.uploadText}>
-                Take a clear, close-up photo of the{'\n'}affected leaf in good lighting.
-              </Text>
-            </View>
+          <View style={styles.cameraWrapper}>
+            {!permission ? (
+              <View style={styles.idleLoading}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+              </View>
+            ) : !permission.granted ? (
+              <View style={styles.permWrap}>
+                <Ionicons name="camera-outline" size={48} color={COLORS.primary} style={{ marginBottom: 16 }} />
+                <Text style={styles.permText}>Camera access is required to scan crops.</Text>
+                <TouchableOpacity style={styles.permBtn} onPress={requestPermission} activeOpacity={0.85}>
+                  <Text style={styles.permBtnText}>Grant Permission</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <CameraView style={styles.camera} facing="back" ref={cameraRef}>
+                <View style={styles.cameraBottomBar}>
+                  <TouchableOpacity style={styles.cameraGalleryBtn} onPress={pickFromGallery} activeOpacity={0.8}>
+                    <Ionicons name="images" size={24} color="#fff" />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.shutterBtn} onPress={takePicture} activeOpacity={0.85}>
+                    <View style={styles.shutterInner} />
+                  </TouchableOpacity>
 
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.actionBtn} onPress={takePhoto} activeOpacity={0.85}>
-                <LinearGradient colors={['#2ECC71', '#27AE60']} style={styles.actionGrad}>
-                  <Ionicons name="camera" size={26} color="#fff" />
-                  <Text style={styles.actionText}>Camera</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.actionBtn} onPress={pickFromGallery} activeOpacity={0.85}>
-                <View style={styles.actionOutline}>
-                  <Ionicons name="images-outline" size={26} color={COLORS.primary} />
-                  <Text style={[styles.actionText, { color: COLORS.primary }]}>Gallery</Text>
+                  <View style={{ width: 44 }} />
                 </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Tips */}
-            <View style={styles.tipsCard}>
-              <Text style={styles.tipsTitle}>📸 Photo Tips</Text>
-              {[
-                'Use natural daylight — avoid flash',
-                'Focus on the most affected leaf',
-                'Capture the entire leaf in frame',
-                'Avoid blurry or overexposed shots',
-              ].map(tip => (
-                <View key={tip} style={styles.tipRow}>
-                  <Ionicons name="checkmark-circle" size={14} color={COLORS.primary} />
-                  <Text style={styles.tipText}>{tip}</Text>
-                </View>
-              ))}
-            </View>
-          </>
+              </CameraView>
+            )}
+          </View>
         )}
 
         {/* ── Preview state ── */}
@@ -206,32 +185,40 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: FONTS.sizes.xl, fontWeight: '800', color: COLORS.textPrimary },
   headerSub:   { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
 
-  uploadZone: {
+  idleLoading: { flex: 1, height: 400, justifyContent: 'center', alignItems: 'center', gap: SPACING.md },
+  
+  cameraWrapper: {
+    height: 480,
+    borderRadius: RADIUS.xl,
+    overflow: 'hidden',
+    marginBottom: SPACING.lg,
     backgroundColor: COLORS.bgCard,
-    borderRadius: RADIUS.xl, borderWidth: 2,
-    borderColor: 'rgba(46,204,113,0.25)', borderStyle: 'dashed',
-    padding: SPACING.xxl, alignItems: 'center', marginBottom: SPACING.lg,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  uploadTitle: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  uploadText:  { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
-
-  actionRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
-  actionBtn:  { flex: 1, borderRadius: RADIUS.lg, overflow: 'hidden' },
-  actionGrad: { padding: SPACING.lg, alignItems: 'center', gap: 8 },
-  actionOutline: {
-    padding: SPACING.lg, alignItems: 'center', gap: 8,
-    borderWidth: 1.5, borderColor: COLORS.primary,
-    borderRadius: RADIUS.lg,
+  camera: { flex: 1, justifyContent: 'flex-end' },
+  cameraBottomBar: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.xl, paddingBottom: SPACING.xl, paddingTop: SPACING.lg,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  actionText: { color: '#fff', fontWeight: '700', fontSize: FONTS.sizes.md },
-
-  tipsCard:  {
-    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.xl,
-    padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border,
+  cameraGalleryBtn: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
   },
-  tipsTitle: { fontSize: FONTS.sizes.md, fontWeight: '700', color: COLORS.textPrimary, marginBottom: SPACING.md },
-  tipRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  tipText:   { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary },
+  shutterBtn: {
+    width: 68, height: 68, borderRadius: 34,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: '#fff',
+  },
+  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },
+  
+  permWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
+  permText: { color: COLORS.textSecondary, fontSize: FONTS.sizes.md, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 22 },
+  permBtn: { backgroundColor: COLORS.primary, paddingHorizontal: SPACING.xl, paddingVertical: 14, borderRadius: RADIUS.lg },
+  permBtnText: { color: '#fff', fontWeight: '700', fontSize: FONTS.sizes.md },
 
   previewWrap: {
     borderRadius: RADIUS.xl, overflow: 'hidden',

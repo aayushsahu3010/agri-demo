@@ -4,7 +4,7 @@
  * Persists scan history locally on-device using expo-file-system.
  * Keeps the last 50 scans, newest first.
  */
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ScanResponse } from './api';
 
 const MAX_HISTORY = 50;
