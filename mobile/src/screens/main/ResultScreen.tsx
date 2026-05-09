@@ -81,7 +81,7 @@ export default function ResultScreen({ route, navigation }: any) {
         <View style={styles.langRow}>
           {(['en','hi'] as const).map(l => (
             <TouchableOpacity key={l} style={[styles.langBtn, lang === l && styles.langBtnActive]} onPress={() => setLang(l)}>
-              <Text style={[styles.langText, lang === l && styles.langTextActive]}>{l === 'en' ? '🇬🇧 English' : '🇮🇳 हिंदी'}</Text>
+              <Text style={[styles.langText, lang === l && styles.langTextActive]}>{l === 'en' ? 'English' : 'हिंदी'}</Text>
             </TouchableOpacity>
           ))}
         </View>

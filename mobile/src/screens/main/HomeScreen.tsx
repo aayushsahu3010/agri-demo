@@ -100,7 +100,7 @@ export default function HomeScreen({ navigation }: any) {
         {/* ── Hero CTA ── */}
         <TouchableOpacity
           activeOpacity={0.88}
-          onPress={() => navigation.navigate('Scan')}
+          onPress={() => navigation.navigate('Scan', { autoLaunch: true })}
         >
           <LinearGradient
             colors={['#2ECC71', '#27AE60']}

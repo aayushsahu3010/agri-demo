@@ -18,6 +18,17 @@
 | 6 | `backend/.env.demo` | **NEW** | Drop-in `.env` for zero-config demo start. Uses SQLite (no PostgreSQL), `DEMO_MODE=True`, dummy JWT secret. Just run `cp .env.demo .env`. |
 | 7 | `backend/requirements.txt` | **MODIFIED** | Added `aiosqlite==0.20.0` so SQLite async engine works for demo mode. |
 
+### UI & Demo Mode Tweaks (Late Session 3)
+
+| # | File | Action | What It Does |
+|---|------|--------|--------------|
+| 1 | `mobile/src/services/api.ts` & `AuthContext.tsx` | **MODIFIED** | Web Crash Fix: Replaced direct `expo-secure-store` calls with a platform-aware helper (`getStorageItem`, `setStorageItem`) that safely falls back to `localStorage` on the Web. |
+| 2 | `mobile/src/services/mockData.ts` & `model_service.py` | **MODIFIED** | Paddy Swap: Changed all demo mock data to use Paddy (Rice) diseases (Leaf Blast, Bacterial Blight, Brown Spot, Healthy) instead of mixed crops. |
+| 3 | `mobile/src/screens/auth/LoginScreen.tsx` | **MODIFIED** | UI Polish: Replaced generic leaf icon with company logo `assets/logo.png`. |
+| 4 | `mobile/src/screens/main/HomeScreen.tsx` | **MODIFIED** | UX Flow: Updated the "Start Scan" Hero CTA to pass `{ autoLaunch: true }` parameter to ScanScreen. |
+| 5 | `mobile/src/screens/main/ScanScreen.tsx` | **MODIFIED** | UX Flow: Added `useEffect` to listen for `autoLaunch`. Automatically opens the camera when navigated from the Home CTA. |
+| 6 | `mobile/src/screens/main/ResultScreen.tsx` | **MODIFIED** | UI Polish: Removed the 🇬🇧/🇮🇳 country flag emojis from the language toggle per user request. |
+
 ### Demo Mode Architecture
 
 ```

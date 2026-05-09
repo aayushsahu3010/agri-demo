@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }: any) {
         {/* Logo */}
         <View style={styles.header}>
           <View style={styles.logoWrap}>
-            <Ionicons name="leaf" size={40} color={COLORS.primary} />
+            <Image source={require('../../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
           <Text style={styles.appName}>CROOPIC</Text>
           <Text style={styles.tagline}>AI-Powered Crop Health</Text>
@@ -121,7 +121,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     marginBottom: SPACING.sm,
     borderWidth: 1, borderColor: 'rgba(46,204,113,0.3)',
+    overflow: 'hidden',
   },
+  logoImage:  { width: '100%', height: '100%' },
   appName:    { fontSize: FONTS.sizes.xxl + 4, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: 3 },
   tagline:    { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 4 },
   card: {

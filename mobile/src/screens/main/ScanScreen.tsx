@@ -5,7 +5,7 @@
  * preview → send to FastAPI /predict/scan → push to
  * ResultScreen with the response.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Image, ActivityIndicator, Alert, ScrollView,
@@ -21,9 +21,17 @@ import { saveToHistory } from '../../services/historyStore';
 
 type Stage = 'idle' | 'preview' | 'scanning' | 'done';
 
-export default function ScanScreen({ navigation }: any) {
+export default function ScanScreen({ navigation, route }: any) {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [stage, setStage]       = useState<Stage>('idle');
+
+  useEffect(() => {
+    if (route.params?.autoLaunch) {
+      // Small timeout ensures the screen transition is smooth before launching camera
+      setTimeout(() => takePhoto(), 300);
+      navigation.setParams({ autoLaunch: false });
+    }
+  }, [route.params?.autoLaunch]);
 
   // ── Pick from gallery ────────────────────────────────
   const pickFromGallery = async () => {
